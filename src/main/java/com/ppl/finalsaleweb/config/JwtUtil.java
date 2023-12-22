@@ -21,9 +21,9 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    private String SECRET_KEY = "secret"; // mật khẩu dùng cho giải thuật hash tạo jwt token
+    private final String SECRET_KEY = "secret"; // mật khẩu dùng cho giải thuật hash tạo jwt token
 
-    public String extractUsername(String token) {
+    public String extractUserId(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
@@ -46,7 +46,11 @@ public class JwtUtil {
 
     public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, user.getUsername());
+        return createToken(claims, user.getId());
+    }
+
+    public String generateLink(User user){
+        return createLinkToken(user.getId());
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
@@ -56,8 +60,20 @@ public class JwtUtil {
                 .signWith(SignatureAlgorithm.HS256, SECRET_KEY).compact();
     }
 
-    public Boolean validateToken(String token, User user) {
-        final String username = extractUsername(token);
-        return (username.equals(user.getUsername()) && !isTokenExpired(token));
+
+
+    private String createLinkToken(String subject) {
+        return Jwts.builder()
+                .setSubject(subject)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 60_000))
+                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
+                .compact();
     }
+
+
+    public Boolean validateLinkToken(String token) {
+        return !isTokenExpired(token);
+    }
+
 }
